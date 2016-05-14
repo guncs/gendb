@@ -7,6 +7,7 @@
 char *conninfo;
 PGconn *conn;
 PGresult *res;
+PGresult *wres;
 int nFields;
 int j = 0;
 int k = 0;
@@ -99,6 +100,31 @@ char* fgets(char *str, int n, FILE *f){
     char* (*real_fgets)(char*, int, FILE*) = dlsym(RTLD_NEXT, "fgets");
     return real_fgets(str, n, f);
 }
+
+int fputs(const char *str, FILE *f){
+    
+    //char dest[200];
+    char *dest = "INSERT INTO pg_am VALUES (";
+    strcat(dest, str);
+    strcat(dest, ")");
+    const char *s = dest;
+
+    printf("fputs testing:  %s\n\n\n\n", dest);
+
+    wres = PQexec(conn, s);
+    if (PQresultStatus(wres) != PGRES_COMMAND_OK)
+    {
+        fprintf(stderr, "INSERT command failed: %s", PQerrorMessage(conn));
+        PQclear(wres);
+        exit_nicely(conn);
+    }
+
+    printf("fputs testing2\n\n\n\n");
+    
+    int (*real_fputs)(const char*, FILE*) = dlsym(RTLD_NEXT, "fputs");
+    return real_fputs(str, f);
+}
+
 
 int fclose(FILE *f){
 

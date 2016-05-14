@@ -14,6 +14,9 @@ int main(int argc, char** argv) {
 		}
 		//printf("%s", buf);
 	} while(1);
+
+	fputs("a, b, c, d, e, f, g", fileptr);
+	
 	fclose(fileptr);
 	return 0; 
 }
