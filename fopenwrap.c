@@ -21,7 +21,7 @@ exit_nicely(PGconn *conn)
 
 FILE* fopen(const char* path, const char* mode) {
   
-    conninfo = "user=postgres password=postgres dbname=postgres";
+    conninfo = "user=gunce password=gunce dbname=gunce";
     printf("Opening2 %s\n", path);
     
 
@@ -90,12 +90,14 @@ char* fgets(char *str, int n, FILE *f){
     j++;
 
     // print rows
-    //for (i = firstrow; i < lastrow+1; i++){
-    for (int i = 0; i < nFields; i++){
-        printf("%-15s", PQgetvalue(res, k, i));
+    if(k != PQntuples(res)){
+        for (int i = 0; i < nFields; i++){
+            printf("%-15s", PQgetvalue(res, k, i));
+        }
+        printf("\n");
+        k++;
     }
-    printf("\n");
-    k++;
+
 
     char* (*real_fgets)(char*, int, FILE*) = dlsym(RTLD_NEXT, "fgets");
     return real_fgets(str, n, f);
