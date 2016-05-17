@@ -105,11 +105,13 @@ char* fgets(char *str, int n, FILE *f){
 
 int fputs(const char *str, FILE *f){
     
-    //char dest[200];
-    char *dest = "INSERT INTO pg_am VALUES (";
+    char dest[200];
+    strcpy(dest, "INSERT INTO tgunc VALUES (");
     strcat(dest, str);
     strcat(dest, ")");
-    const char *s = dest;
+    const char *string = dest;
+
+    printf("Opening 8 : fputs testing:  %s\n\n\n\n", string);
 
     printf("fputs testing:  %s\n\n\n\n", dest);
 
