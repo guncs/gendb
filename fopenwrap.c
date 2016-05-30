@@ -4,6 +4,8 @@
 #include <dlfcn.h>
 #include <libpq-fe.h>
 #include <string.h>
+#include <boost/any.hpp>
+
 
 char *conninfo;
 PGconn *conn;
@@ -13,6 +15,7 @@ int nFields;
 int cnt_fget = 0;
 int k = 0;
 int cnt_fput = 0;
+boost::any anytype = 1;
 
 static void
 exit_nicely(PGconn *conn)
@@ -109,8 +112,24 @@ char* fgets(char *str, int n, FILE *f){
 int fputs(const char *str, FILE *f){
     
     if(cnt_fput == 0){
+
+        char longstr[100] = str;
+        char *token;
+
+        token = strtok(longstr, " ");
+        anytype = token;
+        //?!?!?!?!?!?!??!?!?!?!?!
+        //?!?!?!?!?!?!??!?!?!?
+        while(token != NULL) 
+        {
+          //printf( " %s\n", token );
+        
+          token = strtok(NULL, s);
+        }
+
+
         char dest[200];
-        strcpy(dest, "INSERT INTO tgunc VALUES (");
+        strcpy(dest, "INSERT INTO table3 VALUES (");
         strcat(dest, str);
         strcat(dest, ")");
         const char *string = dest;
