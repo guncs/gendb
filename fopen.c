@@ -14,8 +14,9 @@ int main(int argc, char** argv) {
 
 	printf("Opening1 %s\n", argv[1]);
 	FILE* fileptr = fopen(argv[1], "a+");
+	printf("Opening100 \n");
 	
-	/*for(int i =0; i < 11; i++){
+	for(int i =0; i < 11; i++){
 		r = rand() % 10000;
 		d = (double)((rand() % 10000) / 7);
 		for(int i = 0; i < 20; i++){
@@ -39,9 +40,10 @@ int main(int argc, char** argv) {
 		if (feof(fileptr)){
 			break; 
 		}
-	} while(1);*/
+	} while(1);
 
 	fclose(fileptr);
+	printf("Opening101\n"); //reaches here when only open and close
 	return 0; 
 }
 

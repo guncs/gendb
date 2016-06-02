@@ -25,6 +25,7 @@ exit_nicely(PGconn *conn)
 }
 
 FILE* fopen(const char* path, const char* mode) {
+    const char* tablestr = "table15";
     const char* s = ".txt";
     if(strstr(path, s) != NULL){
     conninfo = "user=gunce password=gunce dbname=gunce";
@@ -42,8 +43,18 @@ FILE* fopen(const char* path, const char* mode) {
     }
     printf("Opening4 %s\n", path);
 
-    res = PQexec(conn, 
-        "CREATE TABLE table4 (id serial primary key); CREATE INDEX ind4 ON table4 (id);");
+
+    char dest[200];
+    strcpy(dest, "CREATE TABLE ");
+    strcat(dest, tablestr);
+    strcat(dest, " (id serial primary key); CREATE INDEX ind15 ON ");
+    strcat(dest, tablestr);
+    strcat(dest, " (id);");
+    const char *string = dest;
+
+
+    res = PQexec(conn, dest);
+        //"CREATE TABLE table4 (id serial primary key); CREATE INDEX ind4 ON table4 (id);");
     if (PQresultStatus(res) != PGRES_COMMAND_OK)
     {
         fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
@@ -53,9 +64,13 @@ FILE* fopen(const char* path, const char* mode) {
     PQclear(res);
     printf("Opening5 table created!! \n");
     }
+
     typedef FILE* (*ropen_ptr)(const char*, const char*);
+    printf("Opening55 \n");
     ropen_ptr real_fopen;
+    printf("Opening56 \n");
     real_fopen = (ropen_ptr)dlsym(RTLD_NEXT, "fopen");
+    printf("Opening57  \n");
     //FILE* (*real_fopen)(const char*, const char*) = dlsym(RTLD_NEXT, "fopen");
     return real_fopen(path, mode);
 }
@@ -127,8 +142,7 @@ int fputs(const char *str, FILE *f){
         anytype = token;
         //?!?!?!?!?!?!??!?!?!?!?!
         //?!?!?!?!?!?!??!?!?!?
-        while(token != NULL) 
-        {
+        while(token != NULL){
           //printf( " %s\n", token );
         
           token = strtok(NULL, longstr);
@@ -136,7 +150,7 @@ int fputs(const char *str, FILE *f){
 
 
         char dest[200];
-        strcpy(dest, "INSERT INTO table3 VALUES (");
+        strcpy(dest, "INSERT INTO table15 VALUES (");
         strcat(dest, str);
         strcat(dest, ")");
         const char *string = dest;
@@ -164,9 +178,9 @@ int fputs(const char *str, FILE *f){
 
 
 int fclose(FILE *f){
-
-    PQclear(res);
-
+    //printf("Opening60 \n");
+    //PQclear(res);
+    //printf("Opening61 \n");
     // close cursor
     res = PQexec(conn, "CLOSE mydata");
     PQclear(res);
