@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+//#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
@@ -7,7 +7,7 @@
 #include <boost/any.hpp>
 
 
-char *conninfo;
+const char *conninfo;
 PGconn *conn;
 PGresult *res;
 PGresult *wres;
@@ -25,7 +25,8 @@ exit_nicely(PGconn *conn)
 }
 
 FILE* fopen(const char* path, const char* mode) {
-  
+    const char* s = ".txt";
+    if(strstr(path, s) != NULL){
     conninfo = "user=gunce password=gunce dbname=gunce";
     printf("Opening2 %s\n", path);
     
@@ -42,7 +43,7 @@ FILE* fopen(const char* path, const char* mode) {
     printf("Opening4 %s\n", path);
 
     res = PQexec(conn, 
-        "CREATE TABLE table3 (id serial primary key); CREATE INDEX ind3 ON table3 (id);");
+        "CREATE TABLE table4 (id serial primary key); CREATE INDEX ind4 ON table4 (id);");
     if (PQresultStatus(res) != PGRES_COMMAND_OK)
     {
         fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
@@ -51,9 +52,11 @@ FILE* fopen(const char* path, const char* mode) {
     }
     PQclear(res);
     printf("Opening5 table created!! \n");
-
-
-	FILE* (*real_fopen)(const char*, const char*) = dlsym(RTLD_NEXT, "fopen");
+    }
+    typedef FILE* (*ropen_ptr)(const char*, const char*);
+    ropen_ptr real_fopen;
+    real_fopen = (ropen_ptr)dlsym(RTLD_NEXT, "fopen");
+    //FILE* (*real_fopen)(const char*, const char*) = dlsym(RTLD_NEXT, "fopen");
     return real_fopen(path, mode);
 }
 
@@ -105,7 +108,10 @@ char* fgets(char *str, int n, FILE *f){
         k++;
     }
 
-    char* (*real_fgets)(char*, int, FILE*) = dlsym(RTLD_NEXT, "fgets");
+    typedef char* (*rgets_ptr)(char*, int, FILE*);
+    rgets_ptr real_fgets;
+    real_fgets = (rgets_ptr)dlsym(RTLD_NEXT, "fgets");
+    //char* (*real_fgets)(char*, int, FILE*) = dlsym(RTLD_NEXT, "fgets");
     return real_fgets(str, n, f);
 }
 
@@ -113,7 +119,8 @@ int fputs(const char *str, FILE *f){
     
     if(cnt_fput == 0){
 
-        char longstr[100] = str;
+        //char longstr[100] = str;
+        char *longstr = (char*)malloc(100);
         char *token;
 
         token = strtok(longstr, " ");
@@ -124,7 +131,7 @@ int fputs(const char *str, FILE *f){
         {
           //printf( " %s\n", token );
         
-          token = strtok(NULL, s);
+          token = strtok(NULL, longstr);
         }
 
 
@@ -143,11 +150,15 @@ int fputs(const char *str, FILE *f){
             PQclear(wres);
             exit_nicely(conn);
         }
-
+        free(longstr);
         printf("Opening 9 : fputs testing2\n\n\n\n");
     }
     cnt_fput++;
-    int (*real_fputs)(const char*, FILE*) = dlsym(RTLD_NEXT, "fputs");
+
+    typedef int (*rputs_ptr)(const char*, FILE*);
+    rputs_ptr real_fputs;
+    real_fputs = (rputs_ptr)dlsym(RTLD_NEXT, "fputs");
+    //int (*real_fputs)(const char*, FILE*) = dlsym(RTLD_NEXT, "fputs");
     return real_fputs(str, f);
 }
 
@@ -169,6 +180,10 @@ int fclose(FILE *f){
     // close db connection 
     PQfinish(conn);
     printf("Opening11 \n");
-    int (*real_fclose)(FILE*) = dlsym(RTLD_NEXT, "fclose");
+
+    typedef int (*rclose_ptr)(FILE*);
+    rclose_ptr real_fclose;
+    real_fclose = (rclose_ptr)dlsym(RTLD_NEXT, "fclose");
+    //int (*real_fclose)(FILE*) = dlsym(RTLD_NEXT, "fclose");
     return real_fclose(f);
 }
