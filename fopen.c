@@ -12,9 +12,9 @@ int main(int argc, char** argv) {
 	char str1[25];
 	char str2[25];
 
-	printf("Opening1 %s\n", argv[1]);
+	printf("1:test fopen %s\n", argv[1]);
 	FILE* fileptr = fopen(argv[1], "a+");
-	printf("Opening100 \n");
+	printf("5: fopen success \n");
 	
 	for(int i =0; i < 11; i++){
 		r = rand() % 10000;
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 	    strcat(dest, " ");
 	    strcat(dest, str2);
     	const char *string = dest;
-    	printf("what is string?: %s\n", string); 
+    	printf("what is fput string?: %s\n", string); 
 		fputs(string, fileptr);
 	}
 
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 	} while(1);
 
 	fclose(fileptr);
-	printf("Opening101\n"); //reaches here when only open and close
+	printf("9:fclose success\n"); //reaches here when only open and close
 	return 0; 
 }
 

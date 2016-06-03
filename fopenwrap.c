@@ -25,52 +25,49 @@ exit_nicely(PGconn *conn)
 }
 
 FILE* fopen(const char* path, const char* mode) {
-    const char* tablestr = "table15";
+    const char* tablestr = "table19";
     const char* s = ".txt";
     if(strstr(path, s) != NULL){
-    conninfo = "user=gunce password=gunce dbname=gunce";
-    printf("Opening2 %s\n", path);
-    
+        conninfo = "user= password= dbname=";
+        printf("2: entered fopenwrapper %s\n", path);
+        
 
-    /* Make db connection */
-    conn = PQconnectdb(conninfo);
-    printf("Opening3 %s\n", path);
-    // Check if backend connection successful
-    if (PQstatus(conn) != CONNECTION_OK)
-    {
-        fprintf(stderr, "Connection to database failed: %s", PQerrorMessage(conn));
-        exit_nicely(conn);
-    }
-    printf("Opening4 %s\n", path);
-
-
-    char dest[200];
-    strcpy(dest, "CREATE TABLE ");
-    strcat(dest, tablestr);
-    strcat(dest, " (id serial primary key); CREATE INDEX ind15 ON ");
-    strcat(dest, tablestr);
-    strcat(dest, " (id);");
-    const char *string = dest;
+        /* Make db connection */
+        conn = PQconnectdb(conninfo);
+        //printf("Opening3 %s\n", path);
+        // Check if backend connection successful
+        if (PQstatus(conn) != CONNECTION_OK)
+        {
+            fprintf(stderr, "Connection to database failed: %s", PQerrorMessage(conn));
+            exit_nicely(conn);
+        }
+        printf("3: connection established %s\n", path);
 
 
-    res = PQexec(conn, dest);
-        //"CREATE TABLE table4 (id serial primary key); CREATE INDEX ind4 ON table4 (id);");
-    if (PQresultStatus(res) != PGRES_COMMAND_OK)
-    {
-        fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
+        char dest[200];
+        strcpy(dest, "CREATE TABLE ");
+        strcat(dest, tablestr);
+        strcat(dest, " (id serial primary key); CREATE INDEX ind19 ON ");
+        strcat(dest, tablestr);
+        strcat(dest, " (id);");
+        const char *string = dest;
+
+
+        res = PQexec(conn, dest);
+            //"CREATE TABLE table4 (id serial primary key); CREATE INDEX ind4 ON table4 (id);");
+        if (PQresultStatus(res) != PGRES_COMMAND_OK)
+        {
+            fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
+            PQclear(res);
+            exit_nicely(conn);
+        }
         PQclear(res);
-        exit_nicely(conn);
-    }
-    PQclear(res);
-    printf("Opening5 table created!! \n");
+        printf("4: table created!! \n");
     }
 
     typedef FILE* (*ropen_ptr)(const char*, const char*);
-    printf("Opening55 \n");
     ropen_ptr real_fopen;
-    printf("Opening56 \n");
     real_fopen = (ropen_ptr)dlsym(RTLD_NEXT, "fopen");
-    printf("Opening57  \n");
     //FILE* (*real_fopen)(const char*, const char*) = dlsym(RTLD_NEXT, "fopen");
     return real_fopen(path, mode);
 }
@@ -140,13 +137,16 @@ int fputs(const char *str, FILE *f){
 
         token = strtok(longstr, " ");
         anytype = token;
-        //?!?!?!?!?!?!??!?!?!?!?!
-        //?!?!?!?!?!?!??!?!?!?
+        //?!?!?
+        
         while(token != NULL){
           //printf( " %s\n", token );
         
           token = strtok(NULL, longstr);
+          anytype = token;
+          //?!?!??!
         }
+
 
 
         char dest[200];
@@ -155,7 +155,7 @@ int fputs(const char *str, FILE *f){
         strcat(dest, ")");
         const char *string = dest;
 
-        printf("Opening 8 : fputs testing:  %s\n\n\n\n", string);
+        printf("6 : fputs string:  %s\n\n\n\n", string);
 
         wres = PQexec(conn, string);
         if (PQresultStatus(wres) != PGRES_COMMAND_OK)
@@ -165,7 +165,7 @@ int fputs(const char *str, FILE *f){
             exit_nicely(conn);
         }
         free(longstr);
-        printf("Opening 9 : fputs testing2\n\n\n\n");
+        printf("7 : fputs passed\n\n\n\n");
     }
     cnt_fput++;
 
@@ -184,7 +184,7 @@ int fclose(FILE *f){
     // close cursor
     res = PQexec(conn, "CLOSE mydata");
     PQclear(res);
-    printf("Opening10 \n");
+    //printf("Opening10 \n");
     
     // end transaction
     res = PQexec(conn, "END");
@@ -193,7 +193,7 @@ int fclose(FILE *f){
     
     // close db connection 
     PQfinish(conn);
-    printf("Opening11 \n");
+    printf("8: connection ended \n");
 
     typedef int (*rclose_ptr)(FILE*);
     rclose_ptr real_fclose;
