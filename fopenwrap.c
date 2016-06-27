@@ -19,7 +19,7 @@ int cnt_fget = 0;
 int k = 0;
 int cnt_fput = 0;
 //boost::any anytype = 1;
-const char* tablestr = "table98";
+const char* tablestr = "table101";
 int type = 0;
 
 
@@ -135,6 +135,12 @@ char* fgets(char *str, int n, FILE *f){
     return real_fgets(str, n, f);
 }
 
+int formatarr[10];
+int cnt_formatstrs = 0;
+//1 : integer
+//2 : float
+//3 : string
+
 int fprintf(FILE *f, const char *format, ... ){
     //printf("ENTERED FPRINTF WRAPPER\n");
     char formatstr[10];
@@ -143,24 +149,99 @@ int fprintf(FILE *f, const char *format, ... ){
     const char* f1 = "%d";
     const char* f2 = "%f";
     const char* f3 = "%s";
+
     va_list arg;
     va_start(arg, format);
 
+
+    //?!?!?!?!? take insertstr and dest outside of fprintf, no need to strcpy and strcat for several times ?!?!
     strcpy(insertstr, "INSERT INTO ");
     strcat(insertstr, tablestr);
     strcat(insertstr, " VALUES (DEFAULT, ");
 
-    if(cnt_fput == 0){ //integer
+    if(cnt_fput == 0){ //first call, alter table schema and add 1st row
         char dest[200];
         char fstr[10];
         char typestr[10];
         const char *string;
+        const char s[2] = " ";
+        char *token;
+        char *formatdup = strdup(format); 
+
+        token = strtok(formatdup, s);
+
+        while(token != NULL){
+            //int format_ind = 0;
+            if(strcmp(token, f1) == 0){
+                formatarr[cnt_formatstrs] = 1;    
+            } 
+            else if(strcmp(token, f2) == 0){
+                formatarr[cnt_formatstrs] = 2;
+            } 
+            else {
+                formatarr[cnt_formatstrs] = 3;
+            }
+            //format_ind++;
+            cnt_formatstrs++;
+            token = strtok(NULL, s);
+        }
+
+       
 
         strcpy(dest, "ALTER TABLE ");
         strcat(dest, tablestr);
-        strcat(dest, " ADD COLUMN ");
+        //strcat(dest, " ADD COLUMN _");
 
-        if(strstr(format, f1) != NULL){
+        for(int i = 0; i < cnt_formatstrs; ){
+            
+            int x = formatarr[i];
+            if(x == 1){//integer
+                strcpy(typestr, " integer");
+                int bint = va_arg(arg, int);
+                snprintf(fstr, 10, "%d", bint);
+            }else if(x == 2){ //float
+                strcpy(typestr, " real");
+                double bint = va_arg(arg, double);
+                snprintf(fstr, 10, "%f", bint);
+            }else{//string
+
+            }
+
+            strcat(dest, " ADD COLUMN _");
+            strcat(dest, fstr);
+            strcat(dest, typestr);
+            strcat(insertstr, fstr);
+            i++;
+            if(i != cnt_formatstrs){
+                strcat(dest, ", ");
+                strcat(insertstr, ", ");
+            }
+
+            //printf("%d\n", formatarr[i]);
+        }
+        strcat(dest, ";");
+        string = dest;        
+        strcat(insertstr, ");");
+        instr = insertstr;
+
+        wres = PQexec(conn, string);
+        if (PQresultStatus(wres) != PGRES_COMMAND_OK)
+        {
+            printf("ALTER command failed: %s", PQerrorMessage(conn));
+            PQclear(wres);
+            exit_nicely(conn);
+        }
+
+        wres = PQexec(conn, instr);
+        if (PQresultStatus(wres) != PGRES_COMMAND_OK)
+        {
+            printf("INSERT command failed: %s", PQerrorMessage(conn));
+            PQclear(wres);
+            exit_nicely(conn);
+        }
+
+
+       /* if(strstr(format, f1) != NULL){//integer
             type = 1;
             strcpy(formatstr, f1);
             strcpy(typestr, " integer");
@@ -174,13 +255,12 @@ int fprintf(FILE *f, const char *format, ... ){
             snprintf(fstr, 10, "%f", bint);
         }else{//string
             type = 3;
-        }
+        }*/
 
         //bunlar for loopta olcak, burda looptan cikmadan dest ve insertstr'a ekle
         //ve sadece int array i build et type numberlara gore
-        
-            strcat(dest, "_");
-            strcat(dest, fstr);
+
+            /*strcat(dest, fstr);
             strcat(dest, typestr);
             strcat(dest, ";");
             string = dest;
@@ -196,17 +276,48 @@ int fprintf(FILE *f, const char *format, ... ){
             strcat(insertstr, ");");
             instr = insertstr;
             wres = PQexec(conn, instr);
-            printf("11111: \n");
-            printf("%s\n", instr);
             if (PQresultStatus(wres) != PGRES_COMMAND_OK)
             {
                 printf("INSERT command failed: %s", PQerrorMessage(conn));
                 PQclear(wres);
                 exit_nicely(conn);
-            }
+            }*/
     }
-    if(cnt_fput >= 1){
+    if(cnt_fput >= 1){ // add next rows
+        
         char istr[100];
+
+
+
+        for(int i = 0; i < cnt_formatstrs; ){
+            
+            int x = formatarr[i];
+            if(x == 1){//integer
+                int bint = va_arg(arg, int);
+                snprintf(istr, 10, "%d", bint);
+            }else if(x == 2){ //float
+                double bint = va_arg(arg, double);
+                snprintf(istr, 10, "%f", bint);
+            }else{//string
+
+            }
+
+            strcat(insertstr, istr);
+            i++;
+            if(i != cnt_formatstrs){
+                strcat(insertstr, ", ");
+            }
+
+            //printf("%d\n", formatarr[i]);
+        }       
+        strcat(insertstr, ");");
+        instr = insertstr;
+
+
+
+
+
+        /*char istr[100];
         if(type == 1){  
             int bint = va_arg(arg, int);
             snprintf(istr, 10, "%d", bint);
@@ -217,7 +328,7 @@ int fprintf(FILE *f, const char *format, ... ){
        
         strcat(insertstr, istr);
         strcat(insertstr, ");");
-        instr = insertstr;
+        instr = insertstr;*/
         
         wres = PQexec(conn, instr);
         if (PQresultStatus(wres) != PGRES_COMMAND_OK)
