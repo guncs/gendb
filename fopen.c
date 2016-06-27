@@ -19,12 +19,14 @@ int main(int argc, char** argv) {
 		d = (double)rand();
 		int dtoi = (int)d;
 		const char *string2 = "%d";
+		printf("11: before fprintf \n");
 		fprintf(fileptr, string2, dtoi);
+		printf("12: after fprintf \n");
 
-		r = rand() % 10000;
-		sprintf(str1, "%d", r);
-		strcpy(dest, str1);
-		const char *string = dest;
+		//r = rand() % 10000;
+		//sprintf(str1, "%d", r);
+		//strcpy(dest, str1);
+		//const char *string = dest;
 		//fputs(string, fileptr);
 	}
 	/*do {

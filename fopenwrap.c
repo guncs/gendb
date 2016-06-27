@@ -19,6 +19,9 @@ int cnt_fget = 0;
 int k = 0;
 int cnt_fput = 0;
 //boost::any anytype = 1;
+const char* tablestr = "table89";
+int type = 0;
+
 
 static void
 exit_nicely(PGconn *conn)
@@ -28,7 +31,7 @@ exit_nicely(PGconn *conn)
 }
 
 FILE* fopen(const char* path, const char* mode) {
-    const char* tablestr = "table81";
+    //const char* tablestr = "table81";
     const char* s = ".txt";
     if(strstr(path, s) != NULL){
         conninfo = "user=gunce password=gunce dbname=gunce";
@@ -50,7 +53,9 @@ FILE* fopen(const char* path, const char* mode) {
         char dest[200];
         strcpy(dest, "CREATE TABLE ");
         strcat(dest, tablestr);
-        strcat(dest, " (id serial primary key); CREATE INDEX ind81 ON ");
+        strcat(dest, " (id serial primary key); CREATE INDEX ind");
+        strcat(dest, tablestr);
+        strcat(dest, " ON ");
         strcat(dest, tablestr);
         strcat(dest, " (id);");
         const char *string = dest;
@@ -131,52 +136,62 @@ char* fgets(char *str, int n, FILE *f){
 }
 
 int fprintf(FILE *f, const char *format, ... ){
-    //printf("ENTERING FPRINTF WRAPPER \n");
+    printf("ENTERED FPRINTF WRAPPER\n");
     va_list arg;
     va_start(arg, format);
     char formatstr[10];
     const char* f1 = "%d";
     const char* f2 = "%f";
     const char* f3 = "%s";
-    int type = 0;
-    if(cnt_fput == 0){ //decimal float or integer
-        char dest[200];
-        strcpy(dest, "ALTER TABLE table81 ADD COLUMN ");
 
+    if(cnt_fput == 0){ //decimal float or integer
+        printf("111:  \n");
+        char dest[200];
+        strcpy(dest, "ALTER TABLE ");
+        strcat(dest, tablestr);
+        strcat(dest, " ADD COLUMN ");
+        const char *instr;
         if(strstr(format, f1) != NULL){
             type = 1;
             strcpy(formatstr, f1);
+            printf("113: \n");
             char typestr[10];
             char fstr[10];
             strcpy(typestr, " integer");
             int bint = va_arg(arg, int);
             snprintf(fstr, 10, "%d", bint);
+            strcat(dest, "_");
             strcat(dest, fstr);
             strcat(dest, typestr);
-            strcat(dest, ")");
+            strcat(dest, ";");
             const char *string = dest;
+
+            printf("Printing alter string: %s\n", string);
             wres = PQexec(conn, string);
             if (PQresultStatus(wres) != PGRES_COMMAND_OK)
             {
-                fprintf(stderr, "ALTER command failed: %s", PQerrorMessage(conn));
+                printf("ALTER command failed: %s", PQerrorMessage(conn));
                 PQclear(wres);
                 exit_nicely(conn);
             }
 
-
             char insertstr[200];
-            strcpy(insertstr, "INSERT INTO table81 VALUES (");
+            strcpy(insertstr, "INSERT INTO ");
+            strcat(insertstr, tablestr);
+            strcat(insertstr, " VALUES (DEFAULT, ");
             strcat(insertstr, fstr);
             strcat(insertstr, ");");
-            const char *instr = insertstr;
+            instr = insertstr;
             wres = PQexec(conn, instr);
             if (PQresultStatus(wres) != PGRES_COMMAND_OK)
             {
-                fprintf(stderr, "INSERT command failed: %s", PQerrorMessage(conn));
+                printf("INSERT command failed: %s", PQerrorMessage(conn));
                 PQclear(wres);
                 exit_nicely(conn);
             }
+            printf("123: \n");
 
+            
         }else if(strstr(format, f2) != NULL){
             type = 2;
             strcpy(formatstr, f2);
@@ -198,7 +213,9 @@ int fprintf(FILE *f, const char *format, ... ){
             }
 
             char insertstr[200];
-            strcpy(insertstr, "INSERT INTO table81 VALUES (");
+            strcpy(insertstr, "INSERT INTO ");
+            strcat(insertstr, tablestr);
+            strcat(insertstr, " VALUES (DEFAULT, ");
             strcat(insertstr, fstr);
             strcat(insertstr, ");");
             const char *instr = insertstr;
@@ -209,15 +226,17 @@ int fprintf(FILE *f, const char *format, ... ){
                 PQclear(wres);
                 exit_nicely(conn);
             }
-
-
         }else{//comparing f3 (string format)
             type = 3;
         }
-    } else {
-        char istr[100];
 
+
+    }
+    if(cnt_fput >= 1){
+        char istr[100];
+        printf("124: \n");
         if(type == 1){  
+            printf("125: \n");
             int bint = va_arg(arg, int);
             snprintf(istr, 10, "%d", bint);
         }else if(type == 2){ 
@@ -225,23 +244,28 @@ int fprintf(FILE *f, const char *format, ... ){
             snprintf(istr, 10, "%f", bint);
         }else {}   
 
+
         char insertstr[200];
-        strcpy(insertstr, "INSERT INTO table81 VALUES (");
+        printf("128: \n");
+        strcpy(insertstr, "INSERT INTO ");
+        strcat(insertstr, tablestr);
+        strcat(insertstr, " VALUES (DEFAULT, ");
         strcat(insertstr, istr);
         strcat(insertstr, ");");
         const char *instr = insertstr;
         wres = PQexec(conn, instr);
         if (PQresultStatus(wres) != PGRES_COMMAND_OK)
         {
-            fprintf(stderr, "INSERT command failed: %s", PQerrorMessage(conn));
+            printf("INSERT command failed: %s", PQerrorMessage(conn));
             PQclear(wres);
             exit_nicely(conn);
         }
         
     }
-
     va_end(arg);
+    printf("134: \n");
     int i = 1;
+
     cnt_fput++;
     typedef int (*fprintf_ptr)(FILE*, const char*, ...);
     fprintf_ptr real_fprintf;
@@ -250,24 +274,8 @@ int fprintf(FILE *f, const char *format, ... ){
     return real_fprintf(f, format, i);
 }
 
-int fputs(const char *string, FILE *f){
+int fputs(const char *string, FILE *f){ //can be implemented in the future for other user programs
     if(cnt_fput == 0){
-        /*char *longstr = (char*)malloc(100);
-        char dest[200];
-        strcpy(dest, "INSERT INTO table15 VALUES (");
-        strcat(dest, str);
-        strcat(dest, ")");
-        const char *string = dest;
-        printf("6 : fputs string:  %s\n\n\n\n", string);
-        wres = PQexec(conn, string);
-        if (PQresultStatus(wres) != PGRES_COMMAND_OK)
-        {
-            fprintf(stderr, "INSERT command failed: %s", PQerrorMessage(conn));
-            PQclear(wres);
-            exit_nicely(conn);
-        }
-        free(longstr);*/
-    
     }
     cnt_fput++;
     typedef int (*fputs_ptr)(const char*, FILE*);
@@ -279,18 +287,16 @@ int fputs(const char *string, FILE *f){
 
 
 int fclose(FILE *f){
-    //printf("Opening60 \n");
+    
     //PQclear(res);
-    //printf("Opening61 \n");
+
     // close cursor
     res = PQexec(conn, "CLOSE mydata");
     PQclear(res);
-    //printf("Opening10 \n");
     
     // end transaction
     res = PQexec(conn, "END");
     PQclear(res);
-    //printf("Opening7 %s\n", path);
     
     // close db connection 
     PQfinish(conn);
