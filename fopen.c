@@ -11,39 +11,29 @@ int main(int argc, char** argv) {
 	char dest[200];
 	char str1[25];
 	char str2[25];
-
-	printf("1:test fopen %s\n", argv[1]);
+	printf("1: test fopen %s\n", argv[1]);
 	FILE* fileptr = fopen(argv[1], "a+");
 	printf("5: fopen success \n");
 	
-	for(int i =0; i < 11; i++){
-		r = rand() % 10000;
-		d = (double)((rand() % 10000) / 7);
-		for(int i = 0; i < 20; i++){
-   			int x = rand() % 25; 
-   			str[i] = (x + 97);
-		} 
-		sprintf(str1, "%d", r);
-		sprintf(str2, "%f", d);
-	   	strcpy(dest, str1);
-	   	strcat(dest, " ");
-	    strcat(dest, str);
-	    strcat(dest, " ");
-	    strcat(dest, str2);
-    	const char *string = dest;
-    	printf("what is fput string?: %s\n", string); 
-		fputs(string, fileptr);
-	}
+	for(int i =0; i < 10; i++){
+		d = (double)rand();
+		int dtoi = (int)d;
+		const char *string2 = "%d";
+		fprintf(fileptr, string2, dtoi);
 
-	do {
+		r = rand() % 10000;
+		sprintf(str1, "%d", r);
+		strcpy(dest, str1);
+		const char *string = dest;
+		//fputs(string, fileptr);
+	}
+	/*do {
 		fgets(buf, 80, fileptr);
 		if (feof(fileptr)){
 			break; 
 		}
-	} while(1);
-
+	} while(1);*/
 	fclose(fileptr);
-	printf("9:fclose success\n"); //reaches here when only open and close
+	printf("9: fclose success\n"); //reaches here when only open and close
 	return 0; 
 }
-
