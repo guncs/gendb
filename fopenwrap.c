@@ -1,14 +1,13 @@
-//#define _GNU_SOURCE
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <libpq-fe.h>
 #include <string.h>
-#include <boost/any.hpp>
+//#include <boost/any.hpp>
 #include <stdarg.h>
 //#include <boost/format.hpp>
-#include <iostream>
-//using namespace std;
+//#include <iostream>
 
 const char *conninfo;
 PGconn *conn;
@@ -18,9 +17,7 @@ int nFields;
 int cnt_fget = 0;
 int k = 0;
 int cnt_fput = 0;
-//boost::any anytype = 1;
-const char* tablestr = "table101";
-int type = 0;
+const char* tablestr = "table112";
 
 
 static void
@@ -36,14 +33,12 @@ FILE* fopen(const char* path, const char* mode) {
     if(strstr(path, s) != NULL){
         conninfo = "user=gunce password=gunce dbname=gunce";
         printf("2: entered fopenwrapper %s\n", path);
-        
 
         /* Make db connection */
         conn = PQconnectdb(conninfo);
         //printf("Opening3 %s\n", path);
         // Check if backend connection successful
-        if (PQstatus(conn) != CONNECTION_OK)
-        {
+        if (PQstatus(conn) != CONNECTION_OK){
             fprintf(stderr, "Connection to database failed: %s", PQerrorMessage(conn));
             exit_nicely(conn);
         }
@@ -63,8 +58,7 @@ FILE* fopen(const char* path, const char* mode) {
 
         res = PQexec(conn, dest);
             //"CREATE TABLE table4 (id serial primary key); CREATE INDEX ind4 ON table4 (id);");
-        if (PQresultStatus(res) != PGRES_COMMAND_OK)
-        {
+        if (PQresultStatus(res) != PGRES_COMMAND_OK){
             fprintf(stderr, "CREATE TABLE failed: %s", PQerrorMessage(conn));
             PQclear(res);
             exit_nicely(conn);
@@ -73,15 +67,15 @@ FILE* fopen(const char* path, const char* mode) {
         printf("4: table created!! \n");
     }
 
-    typedef FILE* (*ropen_ptr)(const char*, const char*);
-    ropen_ptr real_fopen;
-    real_fopen = (ropen_ptr)dlsym(RTLD_NEXT, "fopen");
-	//FILE* (*real_fopen)(const char*, const char*) = dlsym(RTLD_NEXT, "fopen");
+    //typedef FILE* (*ropen_ptr)(const char*, const char*);
+    //ropen_ptr real_fopen;
+    //real_fopen = (ropen_ptr)dlsym(RTLD_NEXT, "fopen");
+	FILE* (*real_fopen)(const char*, const char*) = dlsym(RTLD_NEXT, "fopen");
     return real_fopen(path, mode);
 }
 
 char* fgets(char *str, int n, FILE *f){
-
+    printf("entered fgets \n");
     // Start a transaction block
     res = PQexec(conn, "BEGIN");
     if (PQresultStatus(res) != PGRES_COMMAND_OK){
@@ -128,10 +122,10 @@ char* fgets(char *str, int n, FILE *f){
         k++;
     }
 
-    typedef char* (*rgets_ptr)(char*, int, FILE*);
-    rgets_ptr real_fgets;
-    real_fgets = (rgets_ptr)dlsym(RTLD_NEXT, "fgets");
-    //char* (*real_fgets)(char*, int, FILE*) = dlsym(RTLD_NEXT, "fgets");
+    //typedef char* (*rgets_ptr)(char*, int, FILE*);
+    //rgets_ptr real_fgets;
+    //real_fgets = (rgets_ptr)dlsym(RTLD_NEXT, "fgets");
+    char* (*real_fgets)(char*, int, FILE*) = dlsym(RTLD_NEXT, "fgets");
     return real_fgets(str, n, f);
 }
 
@@ -142,17 +136,16 @@ int cnt_formatstrs = 0;
 //3 : string
 
 int fprintf(FILE *f, const char *format, ... ){
-    //printf("ENTERED FPRINTF WRAPPER\n");
+    printf("entered fprintf\n");
+    
     char formatstr[10];
     char insertstr[200];
     const char *instr;
     const char* f1 = "%d";
     const char* f2 = "%f";
     const char* f3 = "%s";
-
     va_list arg;
     va_start(arg, format);
-
 
     //?!?!?!?!? take insertstr and dest outside of fprintf, no need to strcpy and strcat for several times ?!?!
     strcpy(insertstr, "INSERT INTO ");
@@ -171,7 +164,6 @@ int fprintf(FILE *f, const char *format, ... ){
         token = strtok(formatdup, s);
 
         while(token != NULL){
-            //int format_ind = 0;
             if(strcmp(token, f1) == 0){
                 formatarr[cnt_formatstrs] = 1;    
             } 
@@ -181,17 +173,12 @@ int fprintf(FILE *f, const char *format, ... ){
             else {
                 formatarr[cnt_formatstrs] = 3;
             }
-            //format_ind++;
             cnt_formatstrs++;
             token = strtok(NULL, s);
         }
 
-       
-
         strcpy(dest, "ALTER TABLE ");
         strcat(dest, tablestr);
-        //strcat(dest, " ADD COLUMN _");
-
         for(int i = 0; i < cnt_formatstrs; ){
             
             int x = formatarr[i];
@@ -206,7 +193,6 @@ int fprintf(FILE *f, const char *format, ... ){
             }else{//string
 
             }
-
             strcat(dest, " ADD COLUMN _");
             strcat(dest, fstr);
             strcat(dest, typestr);
@@ -216,8 +202,6 @@ int fprintf(FILE *f, const char *format, ... ){
                 strcat(dest, ", ");
                 strcat(insertstr, ", ");
             }
-
-            //printf("%d\n", formatarr[i]);
         }
         strcat(dest, ";");
         string = dest;        
@@ -225,70 +209,22 @@ int fprintf(FILE *f, const char *format, ... ){
         instr = insertstr;
 
         wres = PQexec(conn, string);
-        if (PQresultStatus(wres) != PGRES_COMMAND_OK)
-        {
+        if (PQresultStatus(wres) != PGRES_COMMAND_OK){
             printf("ALTER command failed: %s", PQerrorMessage(conn));
             PQclear(wres);
             exit_nicely(conn);
         }
 
         wres = PQexec(conn, instr);
-        if (PQresultStatus(wres) != PGRES_COMMAND_OK)
-        {
+        if (PQresultStatus(wres) != PGRES_COMMAND_OK){
             printf("INSERT command failed: %s", PQerrorMessage(conn));
             PQclear(wres);
             exit_nicely(conn);
         }
-
-
-       /* if(strstr(format, f1) != NULL){//integer
-            type = 1;
-            strcpy(formatstr, f1);
-            strcpy(typestr, " integer");
-            int bint = va_arg(arg, int);
-            snprintf(fstr, 10, "%d", bint);
-        }else if(strstr(format, f2) != NULL){ //float
-            type = 2;
-            strcpy(formatstr, f2);
-            strcpy(typestr, " real");
-            double bint = va_arg(arg, double);
-            snprintf(fstr, 10, "%f", bint);
-        }else{//string
-            type = 3;
-        }*/
-
-        //bunlar for loopta olcak, burda looptan cikmadan dest ve insertstr'a ekle
-        //ve sadece int array i build et type numberlara gore
-
-            /*strcat(dest, fstr);
-            strcat(dest, typestr);
-            strcat(dest, ";");
-            string = dest;
-            wres = PQexec(conn, string);
-            if (PQresultStatus(wres) != PGRES_COMMAND_OK)
-            {
-                printf("ALTER command failed: %s", PQerrorMessage(conn));
-                PQclear(wres);
-                exit_nicely(conn);
-            }
-
-            strcat(insertstr, fstr);
-            strcat(insertstr, ");");
-            instr = insertstr;
-            wres = PQexec(conn, instr);
-            if (PQresultStatus(wres) != PGRES_COMMAND_OK)
-            {
-                printf("INSERT command failed: %s", PQerrorMessage(conn));
-                PQclear(wres);
-                exit_nicely(conn);
-            }*/
     }
     if(cnt_fput >= 1){ // add next rows
         
         char istr[100];
-
-
-
         for(int i = 0; i < cnt_formatstrs; ){
             
             int x = formatarr[i];
@@ -301,38 +237,17 @@ int fprintf(FILE *f, const char *format, ... ){
             }else{//string
 
             }
-
             strcat(insertstr, istr);
             i++;
             if(i != cnt_formatstrs){
                 strcat(insertstr, ", ");
             }
-
-            //printf("%d\n", formatarr[i]);
         }       
         strcat(insertstr, ");");
         instr = insertstr;
 
-
-
-
-
-        /*char istr[100];
-        if(type == 1){  
-            int bint = va_arg(arg, int);
-            snprintf(istr, 10, "%d", bint);
-        }else if(type == 2){ 
-            double bint = va_arg(arg, double);
-            snprintf(istr, 10, "%f", bint);
-        }else {}   
-       
-        strcat(insertstr, istr);
-        strcat(insertstr, ");");
-        instr = insertstr;*/
-        
         wres = PQexec(conn, instr);
-        if (PQresultStatus(wres) != PGRES_COMMAND_OK)
-        {
+        if (PQresultStatus(wres) != PGRES_COMMAND_OK){
             printf("INSERT command failed: %s", PQerrorMessage(conn));
             PQclear(wres);
             exit_nicely(conn);
@@ -340,27 +255,30 @@ int fprintf(FILE *f, const char *format, ... ){
     }
     va_end(arg);
     
-    int i = 1;
+    
     cnt_fput++;
-    typedef int (*fprintf_ptr)(FILE*, const char*, ...);
-    fprintf_ptr real_fprintf;
-    real_fprintf = (fprintf_ptr)dlsym(RTLD_NEXT, "fprintf");
-    //int (*real_fputs)(const char*, FILE*) = dlsym(RTLD_NEXT, "fputs");
+    int i = 1;
+    //typedef int (*fprintf_ptr)(FILE*, const char*, ...);
+    //fprintf_ptr real_fprintf;
+    //real_fprintf = (fprintf_ptr)dlsym(RTLD_NEXT, "fprintf");
+    int (*real_fprintf)( FILE*, const char*, ...) = dlsym(RTLD_NEXT, "fprintf");
     return real_fprintf(f, format, i);
 }
 
 int fputs(const char *string, FILE *f){ //can be implemented in the future for other user programs
+    printf("entered fputs\n");
     if(cnt_fput == 0){
     }
     cnt_fput++;
-    typedef int (*fputs_ptr)(const char*, FILE*);
-    fputs_ptr real_fputs;
-    real_fputs = (fputs_ptr)dlsym(RTLD_NEXT, "fputs");
-    //int (*real_fputs)(const char*, FILE*) = dlsym(RTLD_NEXT, "fputs");
+    //typedef int (*fputs_ptr)(const char*, FILE*);
+    //fputs_ptr real_fputs;
+    //real_fputs = (fputs_ptr)dlsym(RTLD_NEXT, "fputs");
+    int (*real_fputs)(const char*, FILE*) = dlsym(RTLD_NEXT, "fputs");
     return real_fputs(string, f);
 }
 
-int fclose(FILE *f){    
+int fclose(FILE *f){
+    printf("entered fclose\n");    
     //PQclear(res);
 
     // close cursor
@@ -373,11 +291,11 @@ int fclose(FILE *f){
     
     // close db connection 
     PQfinish(conn);
-    printf("8: connection ended \n");
+    //printf("8: connection ended \n");
 
-    typedef int (*fclose_ptr)(FILE*);
-    fclose_ptr real_fclose;
-    real_fclose = (fclose_ptr)dlsym(RTLD_NEXT, "fclose");
-    //int (*real_fclose)(FILE*) = dlsym(RTLD_NEXT, "fclose");
+    //typedef int (*fclose_ptr)(FILE*);
+    //fclose_ptr real_fclose;
+    //real_fclose = (fclose_ptr)dlsym(RTLD_NEXT, "fclose");
+    int (*real_fclose)(FILE*) = dlsym(RTLD_NEXT, "fclose");
     return real_fclose(f);
 }
