@@ -19,12 +19,13 @@ int cnt_fget = 0;
 int k = 0;
 int cnt_fput = 0;
 int cnt_fprintf = 0;
-const char* tableno = "15";
+const char* tableno = "19";
 //"table112";
 
 
 const char* src_path1 = "h_data.txt";
-const char* src_path2 = "test.txt";
+const char* src_path2 = "x_data.txt";
+//const char* src_path2 = "test.txt";
 char* src_path;
 int is_src_code = 0;
 int is_fopen_called = 0;
@@ -197,7 +198,7 @@ int fprintf(FILE *f, const char *format, ... ){
             src_path = "h_data";
             is_src_code = 1;
         } else if(strstr(filename, src_path2) != NULL){
-            src_path = "test";
+            src_path = "x_data";
             is_src_code = 1;
         } else {
             //is_src_code = 0;
@@ -278,7 +279,17 @@ int fprintf(FILE *f, const char *format, ... ){
                     printf("55\n");
 
                     strcat(dest, " ADD COLUMN _");
-                    strcat(dest, fstr);
+
+
+                    char *fstrtoken;
+                    char *fstrdup = strdup(fstr); 
+                    fstrtoken = strtok(fstrdup, ".");
+
+
+
+
+
+                    strcat(dest, fstrtoken);
                     strcat(dest, typestr);
                     strcat(insertstr, fstr);
                     i++;
