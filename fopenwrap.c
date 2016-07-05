@@ -14,18 +14,22 @@ const char *conninfo;
 PGconn *conn;
 PGresult *res;
 PGresult *wres;
+
 int nFields;
 int cnt_fget = 0;
 int k = 0;
 int cnt_fput = 0;
 int cnt_fprintf = 0;
-const char* tableno = "19";
-//"table112";
+const char* tableno = "47";
+int column_counter = 0; //in case two columns start with the same value, we need make make their names different
 
 
+//names of the files to which data will be written
 const char* src_path1 = "h_data.txt";
-const char* src_path2 = "x_data.txt";
+//const char* src_path2 = "x_data.txt";
+const char* src_path2 = "laplace_solution.txt";
 //const char* src_path2 = "test.txt";
+
 char* src_path;
 int is_src_code = 0;
 int is_fopen_called = 0;
@@ -37,14 +41,6 @@ exit_nicely(PGconn *conn)
     PQfinish(conn);
     exit(1);
 }
-
-//can ask in the first wrapper function call and store in a const char*
-//but if's in all of them and increment once in fopen for the first time IF path == our const char we stored before
-
-
-//fopen'a kadar is_src_code'u kullan;
-//fopen'i filepath heatmpi.c ise:( calistir ve fd'sini al?!?! ve is_src_code'u 1 yap; 
-//diger wrapper'lara if koy: eger file pointerlarinin fd'si aldigimiz fd ile ayni ise calistir 
 
 FILE* fopen(const char* path, const char* mode) {
 
@@ -176,6 +172,7 @@ char* fgets(char *str, int n, FILE *f){
 
 int formatarr[10];
 int cnt_formatstrs = 0;
+int cnt = 0;
 //1 : integer
 //2 : float
 //3 : string
@@ -186,6 +183,7 @@ int fprintf(FILE *f, const char *format, ... ){
 
         printf("entered fprintf\n");
 
+        //find if the file called fprintf is one of the fopen functions in heatmpi.c
         char f_path[1024];
         char f_name[1024];
         int fd = fileno(f);
@@ -198,7 +196,9 @@ int fprintf(FILE *f, const char *format, ... ){
             src_path = "h_data";
             is_src_code = 1;
         } else if(strstr(filename, src_path2) != NULL){
-            src_path = "x_data";
+            src_path = "laplace_solution";
+            //src_path = "x_data";
+            //src_path = "test";
             is_src_code = 1;
         } else {
             //is_src_code = 0;
@@ -215,52 +215,58 @@ int fprintf(FILE *f, const char *format, ... ){
             const char* s_path = src_path;
             va_list arg;
             va_start(arg, format);
-            printf("11a\n");
-            //?!?!?!?!? take insertstr and dest outside of fprintf, no need to strcpy and strcat for several times ?!?!
+            //printf("11a\n");
+           
             strcpy(insertstr, "INSERT INTO ");
-            printf("11b\n");
+            //printf("11b\n");
             printf("%s\n", s_path);
             strcat(insertstr, s_path);
             strcat(insertstr, tableno);
-            printf("11c\n");
+            //printf("11c\n");
             
             strcat(insertstr, " VALUES (DEFAULT, ");
-            printf("11d\n");
+            //printf("11d\n");
             if(cnt_fprintf == 0){ //first call, alter table schema and add 1st row
                 char dest[200];
-                char fstr[10];
+                char fstr[20];
                 char typestr[10];
                 const char *string;
-                const char s[2] = " ";
+                const char* s1 = " ";
+                const char* s2 = "\n";
                 char *token;
                 char *formatdup = strdup(format); 
-
-
                 printf("22\n");
+                token = strtok(formatdup, s1);
                 
-
-                token = strtok(formatdup, s);
-
                 while(token != NULL){
+                    
                     if(strcmp(token, f1) == 0){
-                        formatarr[cnt_formatstrs] = 1;    
+                        formatarr[cnt] = 1;    
                     } 
                     else if(strcmp(token, f2) == 0){
-                        formatarr[cnt_formatstrs] = 2;
+                        formatarr[cnt] = 2;
+                    } 
+                    else if(strcmp(token, s2) == 0){
+                        formatarr[cnt] = 2;
+                        cnt_formatstrs--;
                     } 
                     else {
-                        formatarr[cnt_formatstrs] = 3;
+                        formatarr[cnt] = 3;
                     }
+                      
                     cnt_formatstrs++;
-                    token = strtok(NULL, s);
+                    cnt++;
+
+                    token = strtok(NULL, s1);
+
                 }
-                printf("33\n");
+                //printf("33\n");
                 strcpy(dest, "ALTER TABLE ");
                 strcat(dest, s_path);
                 strcat(dest, tableno);
                 for(int i = 0; i < cnt_formatstrs; ){
                     
-                    printf("44\n");
+                    //printf("44\n");
 
                     int x = formatarr[i];
                     if(x == 1){//integer
@@ -281,22 +287,23 @@ int fprintf(FILE *f, const char *format, ... ){
                     strcat(dest, " ADD COLUMN _");
 
 
-                    char *fstrtoken;
+                    char *fstrtoken1;
+                    char fstrtoken2[15];
                     char *fstrdup = strdup(fstr); 
-                    fstrtoken = strtok(fstrdup, ".");
-
-
-
-
-
-                    strcat(dest, fstrtoken);
+                    fstrtoken1 = strtok(fstrdup, ".");
+                    //fstrtoken2 = strtok(NULL, ".");
+                    sprintf(fstrtoken2, "%d", column_counter);
+                    strcat(dest, fstrtoken1);
+                    strcat(dest, fstrtoken2);
                     strcat(dest, typestr);
                     strcat(insertstr, fstr);
                     i++;
+                    column_counter++;
                     if(i != cnt_formatstrs){
                         strcat(dest, ", ");
                         strcat(insertstr, ", ");
                     }
+
                 }
 
                 printf("66\n");
@@ -400,6 +407,10 @@ int fclose(FILE *f){
     is_src_code = 0;
     cnt_fprintf = 0;
     k = 0;
+    column_counter = 0;
+    cnt_formatstrs = 0;
+    cnt = 0;
+    //formatarr
     //typedef int (*fclose_ptr)(FILE*);
     //fclose_ptr real_fclose;
     //real_fclose = (fclose_ptr)dlsym(RTLD_NEXT, "fclose");
